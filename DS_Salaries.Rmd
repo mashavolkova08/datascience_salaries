@@ -1,6 +1,8 @@
 ---
-title: "4051 Project"
-output: html_document
+title: "Data Science Salaries Project"
+output:
+  pdf_document: default
+  html_document: default
 date: "2023-04-17"
 ---
 
@@ -8,6 +10,7 @@ date: "2023-04-17"
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
+## Aditi Patil and Masha Volkova 
 
 ```{r}
 ds.salaries <- read.csv(file = 'ds_salaries.csv')
