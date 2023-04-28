@@ -21,21 +21,24 @@ str(ds.salaries)
 ## Preprocessing and Exploratory Analysis
 Since `salaries` is in different currencies we can drop it for in favor of `salary_in_usd`. Furthermore we can also drop variables like `X`, `company_location`, `employee_residence`, and `salary_currency`
 ```{r}
-cols = c("work_year","experience_level","employment_type","job_title","salary_in_usd","remote_ratio","company_size")
+cols = c("work_year","experience_level","employment_type","job_title","salary_in_usd","employee_residence", "remote_ratio", "company_location", "company_size")
 ds.salaries = subset(ds.salaries,select=cols)
 
 # Treat the char variables as factors
-ds.salaries$remote_ratio = as.factor(ds.salaries$remote_ratio)
+ds.salaries$work_year = as.factor(ds.salaries$work_year)
 ds.salaries$experience_level = as.factor(ds.salaries$experience_level)
 ds.salaries$employment_type = as.factor(ds.salaries$employment_type)
 ds.salaries$job_title = as.factor(ds.salaries$job_title)
+ds.salaries$remote_ratio = as.factor(ds.salaries$remote_ratio)
 ds.salaries$company_size = as.factor(ds.salaries$company_size)
 
 # View the final data
 str(ds.salaries)
 ```
 
-In this case we have factors `experience_level`, `employment_type`,and `company_size`, and `remote_ratio`.
+In this case we have factors `work_year`, `experience_level`, `employment_type`, `job_title`, `employee_residence`, `remote_ratio`, `company_location`, and `company_size`.
+
+`employee_residence` and `company_location` will be treated as continuous variables.
 
 `job_title` and `work_year` are categorical variables with more than 3 levels
 
@@ -56,6 +59,21 @@ boxplot(salary_in_usd~remote_ratio,
 ### Possible techniques
 4-way anova?
 Tukey HSD to perform multiple comparison tests?
+
+## Linear Regression
+```{r}
+lm.salaries = lm(salary_in_usd~ work_year + experience_level + employment_type + job_title + employee_residence + remote_ratio + company_location + company_size, data = ds.salaries)
+
+summary(lm.salaries)
+```
+
+## ANOVA Assumptions
+```{r}
+lm.salaries = lm(salary_in_usd~ work_year + experience_level + employment_type + job_title + employee_residence + remote_ratio + company_location + company_size, data = ds.salaries)
+
+plot(lm.salaries,which=c(1,2))
+
+```
 
 ### ANOVA 4-way
 ```{r}
