@@ -4,6 +4,7 @@ output:
   pdf_document: default
   html_document: default
 date: "2023-04-17"
+author: "Aditi Patil and Masha Volkova"
 ---
 
 ```{r setup, include=FALSE}
@@ -14,7 +15,77 @@ knitr::opts_chunk$set(echo = TRUE)
 
 ```{r}
 ds.salaries <- read.csv(file = 'ds_salaries.csv')
-ds.salaries
+str(ds.salaries)
+```
+
+## Preprocessing and Exploratory Analysis
+Since `salaries` is in different currencies we can drop it for in favor of `salary_in_usd`. Furthermore we can also drop variables like `X`, `company_location`, `employee_residence`, and `salary_currency`
+```{r}
+cols = c("work_year","experience_level","employment_type","job_title","salary_in_usd","remote_ratio","company_size")
+ds.salaries = subset(ds.salaries,select=cols)
+
+# Treat the char variables as factors
+ds.salaries$remote_ratio = as.factor(ds.salaries$remote_ratio)
+ds.salaries$experience_level = as.factor(ds.salaries$experience_level)
+ds.salaries$employment_type = as.factor(ds.salaries$employment_type)
+ds.salaries$job_title = as.factor(ds.salaries$job_title)
+ds.salaries$company_size = as.factor(ds.salaries$company_size)
+
+# View the final data
+str(ds.salaries)
+```
+
+In this case we have factors `experience_level`, `employment_type`,and `company_size`, and `remote_ratio`.
+
+`job_title` and `work_year` are categorical variables with more than 3 levels
+
+The response variable `salary_in_usd` is continuous.
+
+```{r, fig.height = 4, fig.width = 8}
+boxplot(ds.salaries$salary_in_usd)
+boxplot(salary_in_usd~employment_type,
+        data=ds.salaries)
+boxplot(salary_in_usd~experience_level,
+        data=ds.salaries)
+boxplot(salary_in_usd~company_size,
+        data=ds.salaries)
+boxplot(salary_in_usd~remote_ratio,
+        data=ds.salaries)
+```
+
+### Possible techniques
+4-way anova?
+Tukey HSD to perform multiple comparison tests?
+
+### ANOVA 4-way
+```{r}
+library(car)
+Anova(lm(salary_in_usd~company_size*experience_level*employment_type*remote_ratio,data=ds.salaries), type=2)
+```
+
+**Princicple of hierarchy: remove highest interaction terms 4-way interaction and recompute**
+
+
+```{r}
+Anova(lm(salary_in_usd~ company_size+experience_level+employment_type+remote_ratio +
+           company_size:experience_level + company_size:employment_type + 
+           company_size:remote_ratio + experience_level:employment_type + 
+           experience_level:remote_ratio + employment_type:remote_ratio +
+           company_size:experience_level:employment_type  + 
+           company_size:experience_level:remote_ratio  + 
+           company_size:employment_type:remote_ratio + 
+           experience_level:employment_type:remote_ratio ,data=ds.salaries), type=2)
+```
+
+**Since none of the 3way interactions are significant, we can drop all three-way interactions**
+
+
+```{r}
+Anova(lm(salary_in_usd~company_size + experience_level + employment_type+
+           remote_ratio +company_size:experience_level + 
+           company_size:employment_type + company_size:remote_ratio +
+           experience_level:employment_type + experience_level:remote_ratio + 
+           employment_type:remote_ratio,data=ds.salaries), type=2)
 ```
 
 
