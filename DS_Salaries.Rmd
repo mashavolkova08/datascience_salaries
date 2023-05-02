@@ -21,32 +21,19 @@ str(ds.salaries)
 ## Preprocessing and Exploratory Analysis
 Since `salaries` is in different currencies we can drop it for in favor of `salary_in_usd`. Furthermore we can also drop variables like `X`, `company_location`, `employee_residence`, and `salary_currency`
 ```{r}
-cols = c("work_year","experience_level","employment_type","job_title", "remote_ratio", "company_size","employee_residence", "company_location","salary_in_usd")
+cols = c("work_year","experience_level","employment_type","salary_in_usd")
 ds.salaries = subset(ds.salaries,select=cols)
 
 # Treat the char variables as factors
 ds.salaries$work_year = as.factor(ds.salaries$work_year)
 ds.salaries$experience_level = as.factor(ds.salaries$experience_level)
 ds.salaries$employment_type = as.factor(ds.salaries$employment_type)
-ds.salaries$job_title = as.factor(ds.salaries$job_title)
-ds.salaries$remote_ratio = as.factor(ds.salaries$remote_ratio)
-ds.salaries$company_size = as.factor(ds.salaries$company_size)
-
-# Treat employee_residence and company_location as continous variables
-ds.salaries$employee_residence = unclass(as.factor(ds.salaries$employee_residence))
-ds.salaries$company_location = unclass(as.factor(ds.salaries$company_location))
 
 # View the final data
 str(ds.salaries)
 ```
+work_year,experience_level, employment_type 3- fixed effect, 1 year and
 
-In this case we have factors `work_year`, `experience_level`, `employment_type`, `job_title`, `remote_ratio`, `work_year` and `company_size`.
-
-`employee_residence` and `company_location` will be treated as continuous variables.
-
-`job_title` has 50 levels
-
-The response variable `salary_in_usd` is continuous.
 
 ```{r, fig.height = 4, fig.width = 8}
 boxplot(ds.salaries$salary_in_usd, xlab="salaries")
@@ -54,52 +41,59 @@ boxplot(salary_in_usd~employment_type,
         data=ds.salaries)
 boxplot(salary_in_usd~experience_level,
         data=ds.salaries)
-boxplot(salary_in_usd~company_size,
-        data=ds.salaries)
-boxplot(salary_in_usd~remote_ratio,
-        data=ds.salaries)
 boxplot(salary_in_usd~work_year,
         data=ds.salaries)
 ```
+ 
 
-```{r}
-# Check for correlation
-cor(data.frame(ds.salaries$employee_residence,ds.salaries$company_location))
-```
-
-### Possible techniques
-4-way anova?
-Tukey HSD to perform multiple comparison tests?
-
-## Linear Regression for Model Selection
-```{r}
-lm.salaries = lm(salary_in_usd~ work_year + experience_level + employment_type + job_title + employee_residence + remote_ratio + company_location + company_size, data = ds.salaries)
-
-summary(lm.salaries)
-```
-We can see that the variables `work_year`, `experience_level`, `employment_type`, `job_title`, `company_size`, and `employee_residence` are significant. So we will keep them in the model
-```{r}
-lm.salaries.2 = lm(salary_in_usd~ work_year + experience_level + employment_type + job_title + employee_residence +   + company_size, data = ds.salaries)
-anova(lm.salaries.2,lm.salaries)
-```
-Since we fail to reject `lm.salaries.2` so we will keep the model with the fewer variables 
-```{r}
-summary(lm.salaries.2)
-```
 ## ANOVA Assumptions
 ```{r}
-lm.salaries = lm(salary_in_usd~ work_year + experience_level + employment_type + job_title + employee_residence + company_size, data = ds.salaries)
+lm.salaries = lm(salary_in_usd~ work_year + experience_level + employment_type, data = ds.salaries)
 
 plot(lm.salaries,which=c(1,2))
 
 ```
 
-### ANOVA 6-way
-The following code takes a very long time to run. **Is there a more efficient way to narrow down variables?**
+## Fixed effect model
 ```{r}
 library(car)
-Anova(lm(salary_in_usd~work_year*experience_level*employment_type*job_title*employee_residence* company_size,data=ds.salaries), type=2)
+model.1 = lm(salary_in_usd ~work_year+ experience_level+employment_type,data=ds.salaries)
+fixed.1 = aov(model.1)
+summary(fixed.1)
+```
+```{r}
+model.2 = lm(salary_in_usd ~work_year*experience_level*employment_type,data=ds.salaries)
+fixed.2 = aov(model.2)
+summary(fixed.2)
+```
+Since the highest level interaction term was not significant we can drop it and consider the two way interactions
+```{r}
+model.3 = lm(salary_in_usd ~work_year+experience_level+employment_type +
+                     work_year:experience_level + work_year:employment_type + 
+                     experience_level:employment_type,data=ds.salaries)
+fixed.3 = aov(model.3)
+summary(fixed.3)
+```
+We can compare models `fixed.1` and `fixed.3` where `fixed.1` is the null model and `fixed.3` is the alternative model
+```{r}
+anova(model.1,model.3)
+```
+In this case the interaction effect is  significant, so we will consider `model.3` as the final fixed effects model
+
+## Random Effects
+Since we picked the model without interactions, we will now consider if `work_year` can be treated as a random effect. The study only pulled data from `2020`,`2021`,and `2022` so we can say that the levels represent a random sample from all the years.
+```{r}
+library(lmerTest)
+mixed.1 = lmer(salary_in_usd ~experience_level+employment_type+ (1|work_year), data =ds.salaries)
+summary(mixed.1)
+```
+```{r}
+mixed.2 = lmer(salary_in_usd ~experience_level*employment_type+ (1|work_year), data =ds.salaries)
+summary(mixed.2)
 ```
 
+```{r}
+anova(mixed.1,mixed.2)
+```
 
 
