@@ -21,7 +21,7 @@ str(ds.salaries)
 ## Preprocessing and Exploratory Analysis
 Since `salaries` is in different currencies we can drop it for in favor of `salary_in_usd`. Furthermore we can also drop variables like `X`, `company_location`, `employee_residence`, and `salary_currency`
 ```{r}
-cols = c("work_year","experience_level","employment_type","job_title","salary_in_usd","employee_residence", "remote_ratio", "company_location", "company_size")
+cols = c("work_year","experience_level","employment_type","job_title", "remote_ratio", "company_size","employee_residence", "company_location","salary_in_usd")
 ds.salaries = subset(ds.salaries,select=cols)
 
 # Treat the char variables as factors
@@ -32,20 +32,24 @@ ds.salaries$job_title = as.factor(ds.salaries$job_title)
 ds.salaries$remote_ratio = as.factor(ds.salaries$remote_ratio)
 ds.salaries$company_size = as.factor(ds.salaries$company_size)
 
+# Treat employee_residence and company_location as continous variables
+ds.salaries$employee_residence = unclass(as.factor(ds.salaries$employee_residence))
+ds.salaries$company_location = unclass(as.factor(ds.salaries$company_location))
+
 # View the final data
 str(ds.salaries)
 ```
 
-In this case we have factors `work_year`, `experience_level`, `employment_type`, `job_title`, `employee_residence`, `remote_ratio`, `company_location`, and `company_size`.
+In this case we have factors `work_year`, `experience_level`, `employment_type`, `job_title`, `remote_ratio`, `work_year` and `company_size`.
 
 `employee_residence` and `company_location` will be treated as continuous variables.
 
-`job_title` and `work_year` are categorical variables with more than 3 levels
+`job_title` has 50 levels
 
 The response variable `salary_in_usd` is continuous.
 
 ```{r, fig.height = 4, fig.width = 8}
-boxplot(ds.salaries$salary_in_usd)
+boxplot(ds.salaries$salary_in_usd, xlab="salaries")
 boxplot(salary_in_usd~employment_type,
         data=ds.salaries)
 boxplot(salary_in_usd~experience_level,
@@ -54,56 +58,48 @@ boxplot(salary_in_usd~company_size,
         data=ds.salaries)
 boxplot(salary_in_usd~remote_ratio,
         data=ds.salaries)
+boxplot(salary_in_usd~work_year,
+        data=ds.salaries)
+```
+
+```{r}
+# Check for correlation
+cor(data.frame(ds.salaries$employee_residence,ds.salaries$company_location))
 ```
 
 ### Possible techniques
 4-way anova?
 Tukey HSD to perform multiple comparison tests?
 
-## Linear Regression
+## Linear Regression for Model Selection
 ```{r}
 lm.salaries = lm(salary_in_usd~ work_year + experience_level + employment_type + job_title + employee_residence + remote_ratio + company_location + company_size, data = ds.salaries)
 
 summary(lm.salaries)
 ```
-
+We can see that the variables `work_year`, `experience_level`, `employment_type`, `job_title`, `company_size`, and `employee_residence` are significant. So we will keep them in the model
+```{r}
+lm.salaries.2 = lm(salary_in_usd~ work_year + experience_level + employment_type + job_title + employee_residence +   + company_size, data = ds.salaries)
+anova(lm.salaries.2,lm.salaries)
+```
+Since we fail to reject `lm.salaries.2` so we will keep the model with the fewer variables 
+```{r}
+summary(lm.salaries.2)
+```
 ## ANOVA Assumptions
 ```{r}
-lm.salaries = lm(salary_in_usd~ work_year + experience_level + employment_type + job_title + employee_residence + remote_ratio + company_location + company_size, data = ds.salaries)
+lm.salaries = lm(salary_in_usd~ work_year + experience_level + employment_type + job_title + employee_residence + company_size, data = ds.salaries)
 
 plot(lm.salaries,which=c(1,2))
 
 ```
 
-### ANOVA 4-way
+### ANOVA 6-way
+The following code takes a very long time to run. **Is there a more efficient way to narrow down variables?**
 ```{r}
 library(car)
-Anova(lm(salary_in_usd~company_size*experience_level*employment_type*remote_ratio,data=ds.salaries), type=2)
+Anova(lm(salary_in_usd~work_year*experience_level*employment_type*job_title*employee_residence* company_size,data=ds.salaries), type=2)
 ```
 
-**Princicple of hierarchy: remove highest interaction terms 4-way interaction and recompute**
-
-
-```{r}
-Anova(lm(salary_in_usd~ company_size+experience_level+employment_type+remote_ratio +
-           company_size:experience_level + company_size:employment_type + 
-           company_size:remote_ratio + experience_level:employment_type + 
-           experience_level:remote_ratio + employment_type:remote_ratio +
-           company_size:experience_level:employment_type  + 
-           company_size:experience_level:remote_ratio  + 
-           company_size:employment_type:remote_ratio + 
-           experience_level:employment_type:remote_ratio ,data=ds.salaries), type=2)
-```
-
-**Since none of the 3way interactions are significant, we can drop all three-way interactions**
-
-
-```{r}
-Anova(lm(salary_in_usd~company_size + experience_level + employment_type+
-           remote_ratio +company_size:experience_level + 
-           company_size:employment_type + company_size:remote_ratio +
-           experience_level:employment_type + experience_level:remote_ratio + 
-           employment_type:remote_ratio,data=ds.salaries), type=2)
-```
 
 
