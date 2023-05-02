@@ -63,18 +63,18 @@ plot(lm.sqrt.salaries,which=c(1,2))
 ## Fixed effect model
 ```{r}
 library(car)
-model.1 = lm(salary_in_usd ~work_year+ experience_level+employment_type,data=ds.salaries)
+model.1 = lm(sqrt(salary_in_usd) ~work_year+ experience_level+employment_type,data=ds.salaries)
 fixed.1 = aov(model.1)
 summary(fixed.1)
 ```
 ```{r}
-model.2 = lm(salary_in_usd ~work_year*experience_level*employment_type,data=ds.salaries)
+model.2 = lm(sqrt(salary_in_usd) ~work_year*experience_level*employment_type,data=ds.salaries)
 fixed.2 = aov(model.2)
 summary(fixed.2)
 ```
 Since the highest level interaction term was not significant we can drop it and consider the two way interactions
 ```{r}
-model.3 = lm(salary_in_usd ~work_year+experience_level+employment_type +
+model.3 = lm(sqrt(salary_in_usd) ~work_year+experience_level+employment_type +
                      work_year:experience_level + work_year:employment_type + 
                      experience_level:employment_type,data=ds.salaries)
 fixed.3 = aov(model.3)
@@ -84,22 +84,42 @@ We can compare models `fixed.1` and `fixed.3` where `fixed.1` is the null model 
 ```{r}
 anova(model.1,model.3)
 ```
-In this case the interaction effect is  significant, so we will consider `model.3` as the final fixed effects model
+Since the p-value of 0.2546 is greater than significance level of 0.05, we fail to reject the null model `model.1` in favor of the alternative model `model.3`. In this case the interaction effect is not significant, so we will consider `model.1` as the final fixed effects model.
 
 ## Random Effects
 Since we picked the model without interactions, we will now consider if `work_year` can be treated as a random effect. The study only pulled data from `2020`,`2021`,and `2022` so we can say that the levels represent a random sample from all the years.
 ```{r}
 library(lme4)
-mixed.1 = lmer(salary_in_usd ~experience_level+employment_type+ (1|work_year), data =ds.salaries)
+mixed.1 = lmer(sqrt(salary_in_usd) ~experience_level+employment_type+ (1|work_year), data =ds.salaries)
 summary(mixed.1)
 ```
 ```{r}
-mixed.2 = lmer(salary_in_usd ~experience_level*employment_type+ (1|work_year), data =ds.salaries)
+mixed.2 = lmer(sqrt(salary_in_usd) ~experience_level*employment_type+ (1|work_year), data =ds.salaries)
 summary(mixed.2)
 ```
 
 ```{r}
 anova(mixed.1,mixed.2)
 ```
+Since the p-value of 0.08407 is greater than significance level of 0.05, we fail to reject the null model `mixed.1` in favor of the alternative model `mixed.3`. In this case the interaction effect is not significant at the 0.05 significance level, so we will consider `mixed.1` as the final mixed effects model.
 
+### Testing the significance of the Random and Fixed effects
+#### Random effect
+```{r}
+library(RLRsim)
+exactRLRT(mixed.1)
+```
+Since the p-value of 0.0201 is less than the significance level of 0.05, the random effect is significant.
 
+#### Fixed Effect
+```{r}
+##Final fixed effects model
+library(car)
+car::Anova(model.1, test="F")
+
+```
+```{r}
+#Final mixed effects model
+library(car)
+car::Anova(mixed.1, test="F")
+```
