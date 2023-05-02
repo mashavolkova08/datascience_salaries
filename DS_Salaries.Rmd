@@ -50,7 +50,13 @@ boxplot(salary_in_usd~work_year,
 ```{r}
 lm.salaries = lm(salary_in_usd~ work_year + experience_level + employment_type, data = ds.salaries)
 
+lm.log.salaries = lm(log(salary_in_usd)~ work_year + experience_level + employment_type, data = ds.salaries)
+
+lm.sqrt.salaries = lm(sqrt(salary_in_usd)~ work_year + experience_level + employment_type, data = ds.salaries)
+
 plot(lm.salaries,which=c(1,2))
+plot(lm.log.salaries,which=c(1,2))
+plot(lm.sqrt.salaries,which=c(1,2))
 
 ```
 
@@ -83,7 +89,7 @@ In this case the interaction effect is  significant, so we will consider `model.
 ## Random Effects
 Since we picked the model without interactions, we will now consider if `work_year` can be treated as a random effect. The study only pulled data from `2020`,`2021`,and `2022` so we can say that the levels represent a random sample from all the years.
 ```{r}
-library(lmerTest)
+library(lme4)
 mixed.1 = lmer(salary_in_usd ~experience_level+employment_type+ (1|work_year), data =ds.salaries)
 summary(mixed.1)
 ```
