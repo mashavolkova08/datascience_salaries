@@ -99,9 +99,22 @@ The following code takes a very long time to run. **Is there a more efficient wa
 ```{r}
 library(car)
 # Anova(lm(salary_in_usd~work_year*experience_level*employment_type*job_title*employee_residence* company_size,data=ds.salaries), type=2)
-# aov(salary_in_usd~work_year*experience_level*employment_type*job_title*employee_residence* company_size,data=ds.salaries)
 ```
 
+Let's try random model with `job_title` as a random effect
+```{r}
+library(lme4)
+model.mixed.1 = lmer(salary_in_usd~work_year+experience_level+employment_type+employee_residence+company_size + (1|job_title),data=ds.salaries)
+summary(model.mixed.1)
+```
 
+```{r}
+model.mixed.2 = lmer(salary_in_usd ~ work_year*experience_level*employment_type*employee_residence*company_size + (1|job_title),data=ds.salaries)
+summary(model.mixed.2)
+```
+```{r}
+anova(model.mixed.1, model.mixed.2)
+```
+Since the value 1.016e-06 < 0.05 we reject `model.mixed.1` in favor of `model.mixed.2` which is the one with the interaction terms.
 
 
