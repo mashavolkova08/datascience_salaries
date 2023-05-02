@@ -66,26 +66,26 @@ boxplot(salary_in_usd~work_year,
 # Check for correlation
 cor(data.frame(ds.salaries$employee_residence,ds.salaries$company_location))
 ```
+Since the correlation between the explanatory variables is high we should drop one of them. 
 
 ### Possible techniques
 4-way anova?
 Tukey HSD to perform multiple comparison tests?
 
 ## Linear Regression for Model Selection
+Suppose we drop `company_location`
 ```{r}
-lm.salaries = lm(salary_in_usd~ work_year + experience_level + employment_type + job_title + employee_residence + remote_ratio + company_location + company_size, data = ds.salaries)
+lm.salaries = lm(salary_in_usd~ work_year + experience_level + employment_type + job_title + remote_ratio + employee_residence + company_size, data = ds.salaries)
 
 summary(lm.salaries)
 ```
-We can see that the variables `work_year`, `experience_level`, `employment_type`, `job_title`, `company_size`, and `employee_residence` are significant. So we will keep them in the model
+We can see that the variables `work_year`, `experience_level`, `employment_type`, `job_title`, `company_size`, and `employee_residence` are significant at an alpha of `0.05`. So we will keep them in the model
 ```{r}
-lm.salaries.2 = lm(salary_in_usd~ work_year + experience_level + employment_type + job_title + employee_residence +   + company_size, data = ds.salaries)
+lm.salaries.2 = lm(salary_in_usd~ work_year + experience_level + employment_type + job_title + employee_residence  + company_size, data = ds.salaries)
 anova(lm.salaries.2,lm.salaries)
 ```
 Since we fail to reject `lm.salaries.2` so we will keep the model with the fewer variables 
-```{r}
-summary(lm.salaries.2)
-```
+
 ## ANOVA Assumptions
 ```{r}
 lm.salaries = lm(salary_in_usd~ work_year + experience_level + employment_type + job_title + employee_residence + company_size, data = ds.salaries)
@@ -98,8 +98,10 @@ plot(lm.salaries,which=c(1,2))
 The following code takes a very long time to run. **Is there a more efficient way to narrow down variables?**
 ```{r}
 library(car)
-Anova(lm(salary_in_usd~work_year*experience_level*employment_type*job_title*employee_residence* company_size,data=ds.salaries), type=2)
+# Anova(lm(salary_in_usd~work_year*experience_level*employment_type*job_title*employee_residence* company_size,data=ds.salaries), type=2)
+# aov(salary_in_usd~work_year*experience_level*employment_type*job_title*employee_residence* company_size,data=ds.salaries)
 ```
+
 
 
 
