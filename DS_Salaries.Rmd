@@ -32,19 +32,21 @@ ds.salaries$employment_type = as.factor(ds.salaries$employment_type)
 # View the final data
 str(ds.salaries)
 ```
-work_year,experience_level, employment_type 3- fixed effect, 1 year and
-
 
 ```{r, fig.height = 4, fig.width = 8}
-boxplot(ds.salaries$salary_in_usd, xlab="salaries")
-boxplot(salary_in_usd~employment_type,
-        data=ds.salaries)
-boxplot(salary_in_usd~experience_level,
-        data=ds.salaries)
-boxplot(salary_in_usd~work_year,
-        data=ds.salaries)
+boxplot(ds.salaries$salary_in_usd, ylab="Salary in USD", main="Distribution of all salaries")
+boxplot(salary_in_usd~employment_type, data=ds.salaries, xlab="Employment Type", ylab="Salary in USD", main="Salary by Employment Type")
+boxplot(salary_in_usd~experience_level, data=ds.salaries, xlab="Experience Level", ylab="Salary in USD", main="Salary by Experience Level")
+boxplot(salary_in_usd~work_year,data=ds.salaries, xlab="Work Year", ylab="Salary in USD", main="Salary by Work Year")
 ```
  
+```{r}
+library(lattice)
+interaction.plot(ds.salaries$experience_level,ds.salaries$employment_type,ds.salaries$salary_in_usd, ylab ="Salary in USD", xlab="Experience Level", trace.label ="Employment Type")
+interaction.plot(ds.salaries$employment_type,ds.salaries$work_year,ds.salaries$salary_in_usd, ylab ="Salary in USD", xlab="Employment Type", trace.label ="Work Year")
+interaction.plot(ds.salaries$experience_level,ds.salaries$work_year,ds.salaries$salary_in_usd, ylab ="Salary in USD", xlab="Experience Level", trace.label ="Work Year")
+```
+
 
 ## ANOVA Assumptions
 ```{r}
@@ -59,6 +61,17 @@ plot(lm.log.salaries,which=c(1,2))
 plot(lm.sqrt.salaries,which=c(1,2))
 
 ```
+We can see that the outliers decrease from 253 to 186 in the QQ plot for the log transformation. They further decrease to 158 in the square root transformation. The resdiual plot's red line curves toward the bottom in the regular model. This line gets closer to the 0 line in the square root function.
+
+```{r}
+library(MASS)
+boxcox(lm.salaries,lambda = seq(-2,2,length=100)) # before transformation
+boxcox(lm.log.salaries,lambda = seq(-2,2,length=100)) # after SQRT transformation
+boxcox(lm.sqrt.salaries,lambda = seq(-2,2,length=100)) # after SQRT transformation
+```
+Looking at the box-cox transformation diagrams the confidence intervals for lambda is below 1 for the regular model. When we do a square root transformation this gets closer to 1. The log transformation offsets it to much larger than 1. 
+
+With all the given points we can see that the square root transformation is appropriate as it has the least amount of outliers in the QQ plot, the residual plot has a much better equal variance, and the box-cox transformation's lambda value is closer to 1 compared to the other transformations (or no transformation).
 
 ## Fixed effect model
 ```{r}
@@ -85,6 +98,19 @@ We can compare models `fixed.1` and `fixed.3` where `fixed.1` is the null model 
 anova(model.1,model.3)
 ```
 Since the p-value of 0.2546 is greater than significance level of 0.05, we fail to reject the null model `model.1` in favor of the alternative model `model.3`. In this case the interaction effect is not significant, so we will consider `model.1` as the final fixed effects model.
+
+### Assumptions
+```{r}
+plot(fixed.1$residuals ~ fixed.1$fitted.values, xlab="Fitted Values", ylab="Residuals", main="Residual Plot for Fixed Model")
+abline(h=0,col="red")
+```
+```{r}
+residuals = resid(fixed.1)
+qqnorm(residuals,main="Residual Plot for Fixed Model")
+qqline(residuals(fixed.1))
+par(mfrow=c(1,2))
+```
+
 
 ## Random Effects
 Since we picked the model without interactions, we will now consider if `work_year` can be treated as a random effect. The study only pulled data from `2020`,`2021`,and `2022` so we can say that the levels represent a random sample from all the years.
@@ -124,6 +150,23 @@ Percentage of variation attributed to random component= ICC x 100
 anova(mixed.1,mixed.2)
 ```
 Since the p-value of 0.08407 is greater than significance level of 0.05, we fail to reject the null model `mixed.1` in favor of the alternative model `mixed.3`. In this case the interaction effect is not significant at the 0.05 significance level, so we will consider `mixed.1` as the final mixed effects model.
+
+### Mixed Effects Assumptions
+```{r}
+# Random Effect Normality
+random = ranef(mixed.1)$work_year[["(Intercept)"]]
+qqnorm(random,main="QQ Plot for Work Year in Mixed Model")
+qqline(random)
+
+# Residuals - Normality
+residuals = resid(mixed.1)
+qqnorm(residuals,main="QQ Plot for Residuals in Mixed Model")
+qqline(residuals(mixed.1))
+
+# Residuals - Constant Variance
+plot(mixed.1,xlab ="Fitted Values",ylab="Residuals",main="Residuals Plot of Mixed Model")
+```
+
 
 ### Testing the significance of the Random and Fixed effects
 #### Random effect
