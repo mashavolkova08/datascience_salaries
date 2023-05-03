@@ -93,6 +93,16 @@ library(lme4)
 mixed.1 = lmer(sqrt(salary_in_usd) ~experience_level+employment_type+ (1|work_year), data =ds.salaries)
 summary(mixed.1)
 ```
+#Assumptions
+```{r}
+#Random effect - work year normality
+
+random.work.year.1 = ranef(mixed.1)$work_year[["(Intercept)"]]
+
+qqnorm(random.work.year.1, main="Work Year")
+qqline(random.work.year.1)
+
+```
 Variance component of work_year: 101.7
 Variance component of residuals: 7578.9
 
@@ -107,6 +117,17 @@ Percentage of variation attributed to random component= ICC x 100
 ```{r}
 mixed.2 = lmer(sqrt(salary_in_usd) ~experience_level*employment_type+ (1|work_year), data =ds.salaries)
 summary(mixed.2)
+```
+
+#Assumptions
+```{r}
+#Random effect - work year normality
+
+random.work.year.2 = ranef(mixed.2)$work_year[["(Intercept)"]]
+
+qqnorm(random.work.year.2, main="Work Year")
+qqline(random.work.year.2)
+
 ```
 Variance component of work_year: 112.7
 Variance component of residuals: 7518.4
