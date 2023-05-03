@@ -93,10 +93,32 @@ library(lme4)
 mixed.1 = lmer(sqrt(salary_in_usd) ~experience_level+employment_type+ (1|work_year), data =ds.salaries)
 summary(mixed.1)
 ```
+Variance component of work_year: 101.7
+Variance component of residuals: 7578.9
+
+Compute the ICC (Intraclass Correlation):
+$$ ICC = \frac{\sigma_\alpha^2}{\sigma_\alpha^2 + \sigma^2} $$
+$$ICC = \frac{101.7}{101.7 + 7578.9} = 0.01324115$$
+Determine the percentage of variation attributed to the random component.
+Percentage of variation attributed to random component= ICC x 100
+
+0.01324115 x 100 = 1.324%
+
 ```{r}
 mixed.2 = lmer(sqrt(salary_in_usd) ~experience_level*employment_type+ (1|work_year), data =ds.salaries)
 summary(mixed.2)
 ```
+Variance component of work_year: 112.7
+Variance component of residuals: 7518.4
+
+Compute the ICC (Intraclass Correlation):
+$$ ICC = \frac{\sigma_\alpha^2}{\sigma_\alpha^2 + \sigma^2} $$
+$$ICC = \frac{112.7}{112.7 + 7518.4} = 0.01476851$$
+Determine the percentage of variation attributed to the random component:
+Percentage of variation attributed to random component= ICC x 100
+
+0.01476851 x 100 = 1.477%
+
 
 ```{r}
 anova(mixed.1,mixed.2)
@@ -105,11 +127,19 @@ Since the p-value of 0.08407 is greater than significance level of 0.05, we fail
 
 ### Testing the significance of the Random and Fixed effects
 #### Random effect
+
+ Ho: Variance components are equal to 0
+ Ha: Variance components are greater than 0
 ```{r}
 library(RLRsim)
 exactRLRT(mixed.1)
 ```
-Since the p-value of 0.0201 is less than the significance level of 0.05, the random effect is significant.
+Since the p-value of 0.0201 is less than the significance level of 0.05, the random effect is significant/variance components statistically greater than O.
+
+#Confidence intervals
+```{r}
+confint(mixed.1)
+```
 
 #### Fixed Effect
 ```{r}
